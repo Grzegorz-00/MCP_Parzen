@@ -45,6 +45,9 @@ src/main.o : ../src/main.cu \
     /usr/include/x86_64-linux-gnu/c++/4.9/bits/cpu_defines.h \
     /usr/include/c++/4.9/exception \
     /usr/include/c++/4.9/bits/atomic_lockfree_defines.h \
+    /usr/include/c++/4.9/bits/exception_ptr.h \
+    /usr/include/c++/4.9/bits/exception_defines.h \
+    /usr/include/c++/4.9/bits/nested_exception.h \
     /usr/include/stdio.h \
     /usr/include/libio.h \
     /usr/include/_G_config.h \
@@ -131,17 +134,20 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/4.9/bits/char_traits.h \
     /usr/include/c++/4.9/bits/stl_algobase.h \
     /usr/include/c++/4.9/bits/functexcept.h \
-    /usr/include/c++/4.9/bits/exception_defines.h \
     /usr/include/c++/4.9/ext/numeric_traits.h \
     /usr/include/c++/4.9/bits/stl_pair.h \
     /usr/include/c++/4.9/bits/move.h \
     /usr/include/c++/4.9/bits/concept_check.h \
+    /usr/include/c++/4.9/type_traits \
     /usr/include/c++/4.9/bits/stl_iterator_base_types.h \
     /usr/include/c++/4.9/bits/stl_iterator_base_funcs.h \
     /usr/include/c++/4.9/debug/debug.h \
     /usr/include/c++/4.9/bits/stl_iterator.h \
     /usr/include/c++/4.9/bits/ptr_traits.h \
     /usr/include/c++/4.9/bits/predefined_ops.h \
+    /usr/include/c++/4.9/cstdint \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/stdint.h \
+    /usr/include/stdint.h \
     /usr/include/c++/4.9/bits/localefwd.h \
     /usr/include/x86_64-linux-gnu/c++/4.9/bits/c++locale.h \
     /usr/include/c++/4.9/clocale \
@@ -169,6 +175,18 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/4.9/backward/binders.h \
     /usr/include/c++/4.9/bits/range_access.h \
     /usr/include/c++/4.9/bits/basic_string.h \
+    /usr/include/c++/4.9/initializer_list \
+    /usr/include/c++/4.9/ext/string_conversions.h \
+    /usr/include/c++/4.9/cstdio \
+    /usr/include/c++/4.9/cerrno \
+    /usr/include/errno.h \
+    /usr/include/x86_64-linux-gnu/bits/errno.h \
+    /usr/include/linux/errno.h \
+    /usr/include/x86_64-linux-gnu/asm/errno.h \
+    /usr/include/asm-generic/errno.h \
+    /usr/include/asm-generic/errno-base.h \
+    /usr/include/c++/4.9/bits/functional_hash.h \
+    /usr/include/c++/4.9/bits/hash_bytes.h \
     /usr/include/c++/4.9/bits/basic_string.tcc \
     /usr/include/c++/4.9/bits/locale_classes.tcc \
     /usr/include/c++/4.9/streambuf \
@@ -186,4 +204,64 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/4.9/istream \
     /usr/include/c++/4.9/bits/istream.tcc \
     ../src/KDE.h \
-    /usr/local/cuda-7.5/bin/../targets/x86_64-linux/include/cuda.h
+    /usr/local/cuda-7.5/bin/../targets/x86_64-linux/include/cuda.h \
+    /usr/include/c++/4.9/fstream \
+    /usr/include/c++/4.9/bits/codecvt.h \
+    /usr/include/x86_64-linux-gnu/c++/4.9/bits/basic_file.h \
+    /usr/include/x86_64-linux-gnu/c++/4.9/bits/c++io.h \
+    /usr/include/c++/4.9/bits/fstream.tcc \
+    ../src/Generator.h \
+    /usr/include/c++/4.9/ctime \
+    /usr/include/c++/4.9/random \
+    /usr/include/c++/4.9/limits \
+    /usr/include/c++/4.9/bits/random.h \
+    /usr/include/c++/4.9/vector \
+    /usr/include/c++/4.9/bits/stl_construct.h \
+    /usr/include/c++/4.9/ext/alloc_traits.h \
+    /usr/include/c++/4.9/bits/alloc_traits.h \
+    /usr/include/c++/4.9/bits/stl_uninitialized.h \
+    /usr/include/c++/4.9/bits/stl_vector.h \
+    /usr/include/c++/4.9/bits/stl_bvector.h \
+    /usr/include/c++/4.9/bits/vector.tcc \
+    /usr/include/x86_64-linux-gnu/c++/4.9/bits/opt_random.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/x86intrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/ia32intrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/mmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/xmmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/mm_malloc.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/emmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/pmmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/tmmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/ammintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/smmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/popcntintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/wmmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/immintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/avxintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/avx2intrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/avx512fintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/avx512erintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/avx512pfintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/avx512cdintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/shaintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/lzcntintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/bmiintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/bmi2intrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/fmaintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/f16cintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/rtmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/xtestintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/mm3dnow.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/prfchwintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/fma4intrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/xopintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/lwpintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/tbmintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/rdseedintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/fxsrintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/xsaveintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/xsaveoptintrin.h \
+    /usr/lib/gcc/x86_64-linux-gnu/4.9/include/adxintrin.h \
+    /usr/include/c++/4.9/bits/random.tcc \
+    /usr/include/c++/4.9/numeric \
+    /usr/include/c++/4.9/bits/stl_numeric.h

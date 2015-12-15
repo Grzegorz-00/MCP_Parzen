@@ -22,32 +22,29 @@ __device__ float getSingleCUDA(float x, float h, int dataSize, float* data)
 	return result;
 }
 
-__global__ void getRangeCUDA(float* args, int size, float* data, float h, int dataSize)
+__global__ void getRangeCUDA(float* resultTable, int resultSize, float start, float stop, float* data, int dataSize, float h)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if(idx < size)
+	if(idx < resultSize)
 	{
-		args[idx] = getSingleCUDA(args[idx],h,dataSize,data);
+		float val = start + idx*(stop-start)/(resultSize-1);
+		resultTable[idx] = getSingleCUDA(val,h,dataSize,data);
 	}
 }
 
 KDE::KDE(int size, float h, float* data)
 {
+	_resultData = NULL;
+	_resultSize = 0;
 	if(data != NULL)
 	{
 		_dataSize = size;
 		_h = h;
-		int block_size = 512;
-		int block_num = (_dataSize + block_size - 1)/block_size;
 		_data = new float[size];
 		for(int i = 0;i<size;i++)
 		{
 			_data[i] = data[i];
 		}
-
-		//CUDA
-		cudaMalloc((void **)&cuda_data,sizeof(float)*_dataSize);
-		cudaMemcpy(cuda_data,_data,sizeof(float)*_dataSize,cudaMemcpyHostToDevice);
 	}
 }
 
@@ -55,7 +52,11 @@ KDE::~KDE()
 {
 	delete[] _data;
 	_dataSize = 0;
-	cudaFree(cuda_data);
+	if(_resultData != NULL)
+	{
+		delete[] _resultData;
+		_resultSize = 0;
+	}
 }
 
 float KDE::epanechnikowKernel(float x)
@@ -67,6 +68,7 @@ float KDE::epanechnikowKernel(float x)
 	}
 	return res;
 }
+
 float KDE::getSingle(float x)
 {
 	float res = 0;
@@ -79,30 +81,112 @@ float KDE::getSingle(float x)
 	return res;
 }
 
-void KDE::getResult(float start, float step, int size, float* result)
+void KDE::getResult(float start, float stop, int resultSize)
 {
-	for(int i = 0;i<size;i++)
+	_resultSize = resultSize;
+	_resultStart = start;
+	_resultStop = stop;
+
+	if(_resultData != NULL)
 	{
-		result[i] = getSingle(start+step*i);
+		delete[] _resultData;
+	}
+	_resultData = new float[_resultSize];
+	float step = (_resultStop-_resultStart)/(_resultSize-1);
+
+	for(int i = 0;i<_resultSize;i++)
+	{
+		_resultData[i] = getSingle(_resultStart+step*i);
+	}
+}
+
+void KDE::saveResultToFile(std::string filename)
+{
+	std::ofstream file;
+	file.open(filename);
+	float step = (_resultStop-_resultStart)/(_resultSize-1);
+	for(int i = 0;i<_resultSize;i++)
+	{
+		file <<  (_resultStart+step*i) << " " << getSingle(_resultStart+step*i) << std::endl;
 	}
 }
 
 
-void KDE::getResultCUDA(float start, float step, int size, float* result)
+void KDE::getResultCUDA(float start, float stop, int resultSize)
 {
-	int block_size = 512;
-	int block_num = (size + block_size - 1)/block_size;
-
-	for(int i = 0;i<size;i++)
+	if(_errorOccur)
 	{
-		result[i] = start+step*i;
+		std::cout << "Poprzednia operacja zakończona niepowodzeniem" << std::endl;
+		return;
+	}
+	_resultSize = resultSize;
+	_resultStart = start;
+	_resultStop = stop;
+
+	if(_resultData != NULL)
+	{
+		delete[] _resultData;
+	}
+	_resultData = new float[_resultSize];
+	int block_size = 512;
+	int block_num = (resultSize + block_size - 1)/block_size;
+
+
+	float *cudaDataTable;
+	float *cudaResultTable;
+
+	if(cudaMalloc((void**)&cudaDataTable,sizeof(float)*_dataSize)!=cudaSuccess)notifyCudaAllocError();
+	if(cudaMalloc((void**)&cudaResultTable,sizeof(float)*_resultSize)!=cudaSuccess)notifyCudaAllocError();
+	if(!_errorOccur)
+	{
+		if(cudaMemcpy(cudaDataTable,_data,sizeof(float)*_dataSize,cudaMemcpyHostToDevice)!=cudaSuccess)notifyCudaCpyError();
+	}
+	if(!_errorOccur)
+	{
+		getRangeCUDA <<<block_num,block_size>>>(cudaResultTable, _resultSize, _resultStart, _resultStop, cudaDataTable, _dataSize, _h);
+		cudaMemcpy(_resultData,cudaResultTable,sizeof(float)*_resultSize,cudaMemcpyDeviceToHost);
 	}
 
-	cudaMalloc((void**)&cuda_args,sizeof(float)*size);
-	cudaMemcpy(cuda_args,result,sizeof(float)*size,cudaMemcpyHostToDevice);
+	cudaFree(cudaDataTable);
+	cudaFree(cudaResultTable);
+}
 
-	getRangeCUDA <<<block_num,block_size>>>(cuda_args, size, cuda_data, _h, _dataSize);
+void KDE::saveHistToFile(std::string filename, float* data, int dataSize, int bids)
+{
+	std::ofstream file;
+	file.open(filename);
+	float min = data[0];
+	float max = data[0];
+	for(int i = 1;i<dataSize;i++)
+	{
+		if(data[i] > max)max = data[i];
+		else if(data[i] < min)min = data[i];
+	}
+	double stepSize = (double)(max-min)/bids;
 
-	cudaMemcpy(result,cuda_args,sizeof(float)*size,cudaMemcpyDeviceToHost);
-	cudaFree(cuda_args);
+	for(int i = 0;i<bids-1;i++)
+	{
+		double minRange = min + i*stepSize;
+		double maxRange = min + (i+1)*stepSize;
+		int rangeOccurs = 0;
+		for(int j = 0;j<dataSize;j++)
+		{
+			if(data[j] >= minRange && data[j] < maxRange)rangeOccurs++;
+		}
+
+		file << (minRange+maxRange)/2 << " " << rangeOccurs << std::endl;
+	}
+	file.close();
+}
+
+void KDE::notifyCudaAllocError()
+{
+	std::cout << "CUDA Alloc problem" << std::endl;
+	_errorOccur = true;
+}
+
+void KDE::notifyCudaCpyError()
+{
+	std::cout << "CUDA Memcpy problem" << std::endl;
+	_errorOccur = true;
 }

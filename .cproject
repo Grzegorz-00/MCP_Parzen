@@ -27,6 +27,7 @@
 								<option id="nvcc.compiler.option.level.540321286" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="true" valueType="boolean"/>
 								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.1083626668" name="Optimization Level" superClass="nvcc.compiler.optimization.level" value="nvcc.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="nvcc.compiler.pic.532030061" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
+								<option id="nvcc.compiler.cpp11option.1070001314" superClass="nvcc.compiler.cpp11option" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.500904141" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.362181405" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.94296031" superClass="nvcc.compiler.input.c"/>
