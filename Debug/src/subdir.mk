@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../src/Data.cpp \
 ../src/Generator.cpp 
 
 CU_SRCS += \
@@ -15,11 +16,13 @@ CU_DEPS += \
 ./src/main.d 
 
 OBJS += \
+./src/Data.o \
 ./src/Generator.o \
 ./src/KDE.o \
 ./src/main.o 
 
 CPP_DEPS += \
+./src/Data.d \
 ./src/Generator.d 
 
 

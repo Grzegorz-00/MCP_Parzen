@@ -5,58 +5,74 @@ __device__ float epanechnikowKernelCUDA(float x)
 	float res = 0;
 	if(x <= 1 && x >= -1)
 	{
-		res = 3*(1-x*x);
+		res = 3*(1-x*x)/4;
 	}
 	return res;
 }
 
-__device__ float getSingleCUDA(float x, float h, int dataSize, float* data)
+__device__ float uniformKernelCUDA(float x)
+{
+	float res = 0;
+	if(x <= 1 && x >= -1)
+	{
+		res = 1.0/2;
+	}
+	return res;
+}
+
+__device__ float gaussianKernelCUDA(float x)
+{
+	float res = 0;
+	res = 1.0/sqrt(2*M_PI)*exp(-1.0/2*x*x);
+	return res;
+}
+
+__device__ float getSingleCUDA(float x, float h, int dataSize, float* data, int kernelType)
 {
 	float result = 0;
 	for(int i = 0;i<dataSize;i++)
 	{
 		float kernel_par =(x-data[i])/h;
-		result += epanechnikowKernelCUDA(kernel_par);
+		if(kernelType == 0)
+		{
+			result += epanechnikowKernelCUDA(kernel_par);
+		}
+		else if(kernelType == 1)
+		{
+			result += uniformKernelCUDA(kernel_par);
+		}
+		else if(kernelType == 2)
+		{
+			result += gaussianKernelCUDA(kernel_par);
+		}
 	}
 	result /= (dataSize*h);
 	return result;
 }
 
-__global__ void getRangeCUDA(float* resultTable, int resultSize, float start, float stop, float* data, int dataSize, float h)
+__global__ void getRangeCUDA(float* resultTable, int resultSize,float start, float step, float* data, int dataSize, float h, int kernelType)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if(idx < resultSize)
 	{
-		float val = start + idx*(stop-start)/(resultSize-1);
-		resultTable[idx] = getSingleCUDA(val,h,dataSize,data);
+		float val = start + idx*step;
+		resultTable[idx] = getSingleCUDA(val,h,dataSize,data,kernelType);
 	}
 }
 
-KDE::KDE(int size, float h, float* data)
+KDE::KDE(Data* inputData, Data* outputData, float start, float stop, float h, int kernelType)
 {
-	_resultData = NULL;
-	_resultSize = 0;
-	if(data != NULL)
-	{
-		_dataSize = size;
-		_h = h;
-		_data = new float[size];
-		for(int i = 0;i<size;i++)
-		{
-			_data[i] = data[i];
-		}
-	}
+	_kernelType = kernelType;
+	_inputData = inputData;
+	_outputData = outputData;
+	_resultStart = start;
+	_resultStop = stop;
+	_h = h;
 }
 
 KDE::~KDE()
 {
-	delete[] _data;
-	_dataSize = 0;
-	if(_resultData != NULL)
-	{
-		delete[] _resultData;
-		_resultSize = 0;
-	}
+
 }
 
 float KDE::epanechnikowKernel(float x)
@@ -64,92 +80,163 @@ float KDE::epanechnikowKernel(float x)
 	float res = 0;
 	if(x <= 1 && x >= -1)
 	{
-		res = 3*(1-x*x);
+		res = 3*(1-x*x)/4;
 	}
 	return res;
 }
 
-float KDE::getSingle(float x)
+float KDE::uniformKernel(float x)
 {
 	float res = 0;
-	for(int i = 0;i<_dataSize;i++)
+	if(x <= 1 && x >= -1)
 	{
-		float kernel_par =(x-_data[i])/_h;
-		res += epanechnikowKernel(kernel_par);
+		res = 1.0/2;
 	}
-	res /= (_dataSize*_h);
 	return res;
 }
 
-void KDE::getResult(float start, float stop, int resultSize)
+float KDE::gaussianKernel(float x)
 {
-	_resultSize = resultSize;
-	_resultStart = start;
-	_resultStop = stop;
+	float res = 0;
+	res = 1.0/sqrt(2*M_PI)*exp(-1.0/2*x*x);
+	return res;
+}
 
-	if(_resultData != NULL)
+float KDE::getSingle(float x, float* data)
+{
+	float res = 0;
+	for(int i = 0;i<_inputData->getSampleSize();i++)
 	{
-		delete[] _resultData;
+		float kernel_par =(x-data[i])/_h;
+		if(_kernelType == 0)
+		{
+			res += epanechnikowKernel(kernel_par);
+		}
+		else if(_kernelType == 1)
+		{
+			res += uniformKernel(kernel_par);
+		}
+		else if(_kernelType == 2)
+		{
+			res += gaussianKernel(kernel_par);
+		}
 	}
-	_resultData = new float[_resultSize];
-	float step = (_resultStop-_resultStart)/(_resultSize-1);
+	res /= (_inputData->getSampleSize()*_h);
+	return res;
+}
 
-	for(int i = 0;i<_resultSize;i++)
+void KDE::getResult()
+{
+
+	float step = (_resultStop-_resultStart)/(_outputData->getSampleSize()-1);
+
+	for(int j = 0;j<_inputData->getSampleQuantity();j++)
 	{
-		_resultData[i] = getSingle(_resultStart+step*i);
+		float* tempInputData = _inputData->getDataPtr()[j];
+		float* tempOutputData = _outputData->getDataPtr()[j];
+		for(int i = 0;i<_outputData->getSampleSize();i++)
+		{
+			tempOutputData[i] = getSingle(_resultStart+step*i, tempInputData);
+		}
+
+		//normalize
+		double sum = 0;
+		for(int i = 0;i<_outputData->getSampleSize();i++)
+		{
+			sum += tempOutputData[i];
+		}
+		sum *= step;
+		for(int i = 0;i<_outputData->getSampleSize();i++)
+		{
+			tempOutputData[i] /= sum;
+		}
+
 	}
+
+	_outputData->compute();
+
+}
+
+void KDE::getResultCUDA()
+{
+	float step = (_resultStop-_resultStart)/(_outputData->getSampleSize()-1);
+
+	int inputDataSize = _inputData->getSampleSize();
+	int outputDataSize = _outputData->getSampleSize();
+
+	int block_size = 512;
+	int block_num = (outputDataSize + block_size - 1)/block_size;
+
+
+
+	float *cudaDataTable;
+	float *cudaResultTable;
+	cudaMalloc((void**)&cudaDataTable,sizeof(float)*inputDataSize);
+	cudaMalloc((void**)&cudaResultTable,sizeof(float)*outputDataSize);
+
+	for(int j = 0;j<_inputData->getSampleQuantity();j++)
+	{
+		float* tempInputData = _inputData->getDataPtr()[j];
+		float* tempOutputData = _outputData->getDataPtr()[j];
+
+		cudaMemcpy(cudaDataTable,tempInputData,sizeof(float)*inputDataSize,cudaMemcpyHostToDevice);
+		getRangeCUDA <<<block_num,block_size>>>(cudaResultTable, outputDataSize, _resultStart, step, cudaDataTable, inputDataSize, _h, _kernelType);
+		cudaMemcpy(tempOutputData,cudaResultTable,sizeof(float)*outputDataSize,cudaMemcpyDeviceToHost);
+
+		//normalize
+		double sum = 0;
+		for(int i = 0;i<_outputData->getSampleSize();i++)
+		{
+			sum += tempOutputData[i];
+		}
+		sum *= step;
+		for(int i = 0;i<_outputData->getSampleSize();i++)
+		{
+			tempOutputData[i] /= sum;
+		}
+	}
+	cudaFree(cudaDataTable);
+	cudaFree(cudaResultTable);
+	_outputData->compute();
+
 }
 
 void KDE::saveResultToFile(std::string filename)
 {
 	std::ofstream file;
 	file.open(filename);
-	float step = (_resultStop-_resultStart)/(_resultSize-1);
-	for(int i = 0;i<_resultSize;i++)
+	float step = (_resultStop-_resultStart)/(_outputData->getSampleSize()-1);
+	for(int i = 0;i<_outputData->getSampleSize();i++)
 	{
-		file <<  (_resultStart+step*i) << " " << getSingle(_resultStart+step*i) << std::endl;
+		float mean = _outputData->getMean()[i];
+		float dev = _outputData->getStdDev()[i];
+		float x = _resultStart+step*i;
+		float y = Generator::orginalDoubleGauss(x);
+		file << x << " " << y << " " << mean-dev << " " << mean << " " << mean+dev << std::endl;
 	}
+	file.close();
 }
 
-
-void KDE::getResultCUDA(float start, float stop, int resultSize)
+float KDE::getChiSquaredVal()
 {
-	if(_errorOccur)
+	float step = (_resultStop-_resultStart)/(_outputData->getSampleSize()-1);
+	double sum = 0;
+	for(int i = 0;i<_outputData->getSampleSize();i++)
 	{
-		std::cout << "Poprzednia operacja zakończona niepowodzeniem" << std::endl;
-		return;
+		float mean = _outputData->getMean()[i];
+		float dev = _outputData->getStdDev()[i];
+		float x = _resultStart+step*i;
+		float y = Generator::orginalDoubleGauss(x);
+		double temp = (mean-y)/(dev);
+		temp = temp*temp;
+		sum += temp;
 	}
-	_resultSize = resultSize;
-	_resultStart = start;
-	_resultStop = stop;
-
-	if(_resultData != NULL)
-	{
-		delete[] _resultData;
-	}
-	_resultData = new float[_resultSize];
-	int block_size = 512;
-	int block_num = (resultSize + block_size - 1)/block_size;
-
-
-	float *cudaDataTable;
-	float *cudaResultTable;
-
-	if(cudaMalloc((void**)&cudaDataTable,sizeof(float)*_dataSize)!=cudaSuccess)notifyCudaAllocError();
-	if(cudaMalloc((void**)&cudaResultTable,sizeof(float)*_resultSize)!=cudaSuccess)notifyCudaAllocError();
-	if(!_errorOccur)
-	{
-		if(cudaMemcpy(cudaDataTable,_data,sizeof(float)*_dataSize,cudaMemcpyHostToDevice)!=cudaSuccess)notifyCudaCpyError();
-	}
-	if(!_errorOccur)
-	{
-		getRangeCUDA <<<block_num,block_size>>>(cudaResultTable, _resultSize, _resultStart, _resultStop, cudaDataTable, _dataSize, _h);
-		cudaMemcpy(_resultData,cudaResultTable,sizeof(float)*_resultSize,cudaMemcpyDeviceToHost);
-	}
-
-	cudaFree(cudaDataTable);
-	cudaFree(cudaResultTable);
+	return sum;
 }
+
+
+
+
 
 void KDE::saveHistToFile(std::string filename, float* data, int dataSize, int bids)
 {

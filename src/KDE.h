@@ -8,30 +8,36 @@
 #include <iostream>
 #include <fstream>
 
+#include "Data.h"
+#include "Generator.h"
+
 class KDE
 {
 private:
-	int _dataSize;
-	int _resultSize;
+	Data* _inputData;
+	Data* _outputData;
 	float _resultStart;
 	float _resultStop;
-	float *_data;
-	float *_resultData;
 	float _h;
 	bool _errorOccur = false;
+	int _kernelType;
 
 	float epanechnikowKernel(float x);
+	float uniformKernel(float x);
+	float gaussianKernel(float x);
+
 	void notifyCudaAllocError();
 	void notifyCudaCpyError();
 
 
 public:
-	KDE(int size, float h, float* data);
+	KDE(Data* inputData, Data* outputData, float start, float stop, float h, int kernelType);
 	~KDE();
-	float getSingle(float x);
-	void getResult(float start, float stop, int resultSize);
-	void getResultCUDA(float start, float stop, int resultSize);
+	float getSingle(float x, float* data);
+	void getResult();
+	void getResultCUDA();
 	void saveResultToFile(std::string filename);
+	float getChiSquaredVal();
 	static void saveHistToFile(std::string filename, float* data, int dataSize, int bids);
 };
 

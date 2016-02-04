@@ -210,6 +210,7 @@ src/main.o : ../src/main.cu \
     /usr/include/x86_64-linux-gnu/c++/4.9/bits/basic_file.h \
     /usr/include/x86_64-linux-gnu/c++/4.9/bits/c++io.h \
     /usr/include/c++/4.9/bits/fstream.tcc \
+    ../src/Data.h \
     ../src/Generator.h \
     /usr/include/c++/4.9/ctime \
     /usr/include/c++/4.9/random \
