@@ -203,6 +203,7 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/4.9/bits/ostream.tcc \
     /usr/include/c++/4.9/istream \
     /usr/include/c++/4.9/bits/istream.tcc \
+    /usr/include/c++/4.9/ctime \
     ../src/KDE.h \
     /usr/local/cuda-7.5/bin/../targets/x86_64-linux/include/cuda.h \
     /usr/include/c++/4.9/fstream \
@@ -212,7 +213,6 @@ src/main.o : ../src/main.cu \
     /usr/include/c++/4.9/bits/fstream.tcc \
     ../src/Data.h \
     ../src/Generator.h \
-    /usr/include/c++/4.9/ctime \
     /usr/include/c++/4.9/random \
     /usr/include/c++/4.9/limits \
     /usr/include/c++/4.9/bits/random.h \

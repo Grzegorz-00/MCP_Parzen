@@ -27,21 +27,21 @@ __device__ float gaussianKernelCUDA(float x)
 	return res;
 }
 
-__device__ float getSingleCUDA(float x, float h, int dataSize, float* data, int kernelType)
+__device__ float getSingleCUDA(float x, float h, int dataSize, float* data, kernel_type kernelType)
 {
 	float result = 0;
 	for(int i = 0;i<dataSize;i++)
 	{
 		float kernel_par =(x-data[i])/h;
-		if(kernelType == 0)
+		if(kernelType == epanechnikov)
 		{
 			result += epanechnikowKernelCUDA(kernel_par);
 		}
-		else if(kernelType == 1)
+		else if(kernelType == uniform)
 		{
 			result += uniformKernelCUDA(kernel_par);
 		}
-		else if(kernelType == 2)
+		else if(kernelType == gaussian)
 		{
 			result += gaussianKernelCUDA(kernel_par);
 		}
@@ -50,7 +50,7 @@ __device__ float getSingleCUDA(float x, float h, int dataSize, float* data, int 
 	return result;
 }
 
-__global__ void getRangeCUDA(float* resultTable, int resultSize,float start, float step, float* data, int dataSize, float h, int kernelType)
+__global__ void getRangeCUDA(float* resultTable, int resultSize,float start, float step, float* data, int dataSize, float h, kernel_type kernelType)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if(idx < resultSize)
@@ -60,7 +60,7 @@ __global__ void getRangeCUDA(float* resultTable, int resultSize,float start, flo
 	}
 }
 
-KDE::KDE(Data* inputData, Data* outputData, float start, float stop, float h, int kernelType)
+KDE::KDE(Data* inputData, Data* outputData, float start, float stop, float h, kernel_type kernelType)
 {
 	_kernelType = kernelType;
 	_inputData = inputData;
@@ -108,15 +108,15 @@ float KDE::getSingle(float x, float* data)
 	for(int i = 0;i<_inputData->getSampleSize();i++)
 	{
 		float kernel_par =(x-data[i])/_h;
-		if(_kernelType == 0)
+		if(_kernelType == epanechnikov)
 		{
 			res += epanechnikowKernel(kernel_par);
 		}
-		else if(_kernelType == 1)
+		else if(_kernelType == uniform)
 		{
 			res += uniformKernel(kernel_par);
 		}
-		else if(_kernelType == 2)
+		else if(_kernelType == gaussian)
 		{
 			res += gaussianKernel(kernel_par);
 		}
@@ -209,7 +209,7 @@ void KDE::saveResultToFile(std::string filename)
 	for(int i = 0;i<_outputData->getSampleSize();i++)
 	{
 		float mean = _outputData->getMean()[i];
-		float dev = _outputData->getStdDev()[i];
+		float dev = _outputData->getStdDev()[i]/2;
 		float x = _resultStart+step*i;
 		float y = Generator::orginalDoubleGauss(x);
 		file << x << " " << y << " " << mean-dev << " " << mean << " " << mean+dev << std::endl;
@@ -227,8 +227,8 @@ float KDE::getChiSquaredVal()
 		float dev = _outputData->getStdDev()[i];
 		float x = _resultStart+step*i;
 		float y = Generator::orginalDoubleGauss(x);
-		double temp = (mean-y)/(dev);
-		temp = temp*temp;
+		double temp = (mean-y)*(mean-y)/(dev*dev);
+
 		sum += temp;
 	}
 	return sum;

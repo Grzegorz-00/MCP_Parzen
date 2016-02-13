@@ -11,6 +11,13 @@
 #include "Data.h"
 #include "Generator.h"
 
+enum kernel_type
+{
+	uniform = 0,
+	epanechnikov = 1,
+	gaussian = 2
+};
+
 class KDE
 {
 private:
@@ -20,7 +27,7 @@ private:
 	float _resultStop;
 	float _h;
 	bool _errorOccur = false;
-	int _kernelType;
+	kernel_type _kernelType;
 
 	float epanechnikowKernel(float x);
 	float uniformKernel(float x);
@@ -31,7 +38,7 @@ private:
 
 
 public:
-	KDE(Data* inputData, Data* outputData, float start, float stop, float h, int kernelType);
+	KDE(Data* inputData, Data* outputData, float start, float stop, float h, kernel_type kernelType);
 	~KDE();
 	float getSingle(float x, float* data);
 	void getResult();
